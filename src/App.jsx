@@ -1126,7 +1126,7 @@ const LearningTab = ({themeStyles, progressData, setProgressData}) => {
 
     // 4. Save quietly to the FastAPI database in the background
     try {
-      const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
       await fetch(`${API_URL}/api/progress`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1468,7 +1468,7 @@ const DashboardScreen = ({userData,profileData,recommendations,onCareerSelect,on
 
   const fetchCareerPath = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
       
       // We only need the POST method and credentials; no body required!
       const response = await fetch(`${API_URL}/api/generate-career-path`, {
@@ -1495,7 +1495,7 @@ const DashboardScreen = ({userData,profileData,recommendations,onCareerSelect,on
   useEffect(() => {
     const fetchProgress = async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+        const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
         const response = await fetch(`${API_URL}/api/progress`, {
           method: "GET",
           credentials: "include"
@@ -1770,7 +1770,7 @@ const EditProfileModal = ({ isOpen, onClose, userData, setUserData, profileData,
 
         try {
           // 1. Get the AI Analysis
-          const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+          const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
           const response = await fetch(`${API_URL}/api/analyze-assessment`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1803,7 +1803,7 @@ const EditProfileModal = ({ isOpen, onClose, userData, setUserData, profileData,
         // 3. Save the results to your SQLite Database
         if (userData) {
           try {
-            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+            const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
             await fetch(`${API_URL}/api/save-assessment`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -1917,7 +1917,7 @@ const handleDeleteAccount = async () => {
     if (!isConfirmed) return;
 
     try {
-      const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
       
       // 2. Tell FastAPI to delete the database record
       const response = await fetch(`${API_URL}/api/delete-account`, {
