@@ -353,7 +353,7 @@ const AuthScreen = ({ userData, setUserData, onNavigate, onBack, themeStyles, us
         const response = await fetch(`${API_URL}/api/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
+          // Removed credentials: "include"
           body: JSON.stringify({ email, password, name, school })
         });
 
@@ -362,6 +362,9 @@ const AuthScreen = ({ userData, setUserData, onNavigate, onBack, themeStyles, us
         // 2. Handle errors from the backend
         if (!response.ok) {
           throw new Error(data.detail || 'Signup failed');
+        }
+        if (data.token) {
+          localStorage.setItem('pathfinder_token', data.token);
         }
 
         // 3. Update frontend state
@@ -381,14 +384,17 @@ const AuthScreen = ({ userData, setUserData, onNavigate, onBack, themeStyles, us
         const response = await fetch(`${API_URL}/api/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
+          // Removed credentials: "include"
           body: JSON.stringify({ email, password })
         });
 
         const data = await response.json();
-
+        
         if (!response.ok) {
           throw new Error(data.detail || 'Login failed');
+        }
+        if (data.token) {
+          localStorage.setItem('pathfinder_token', data.token);
         }
         // THE FIX: We remove the hardcoded "true" and trust the backend data
         const existingUser = data.user; 
@@ -415,7 +421,7 @@ const AuthScreen = ({ userData, setUserData, onNavigate, onBack, themeStyles, us
         const response = await fetch(`${API_URL}/api/google-auth`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
+          // Removed credentials: "include"
           body: JSON.stringify({
             email: googleProfile.email,
             name: googleProfile.name || googleProfile.given_name || 'Google User'
@@ -426,6 +432,9 @@ const AuthScreen = ({ userData, setUserData, onNavigate, onBack, themeStyles, us
 
         if (!response.ok) {
           throw new Error(data.detail || 'Backend Google authentication failed.');
+        }
+        if (data.token) {
+          localStorage.setItem('pathfinder_token', data.token);
         }
 
         // 3. Set the REAL database user in React state
@@ -1021,7 +1030,7 @@ const CareerDetailsScreen = ({career,onBack, themeStyles}) => {
 const OverviewTab = ({recommendations,onCareerSelect, themeStyles}) => (
   <div className="md:grid md:grid-cols-5 md:gap-8 space-y-6 md:space-y-0">
   <div className="md:col-span-2 space-y-6">
-    <div classNamestyle={{borderColor:'#00A651'}} className={`rounded-r-2xl rounded-l-sm border-l-4 p-5 ${themeStyles.bgCard}`}>
+    <div className={`rounded-r-2xl rounded-l-sm border-l-4 p-5 ${themeStyles.bgCard}`} style={{borderColor:'#00A651'}}>
       <h3 className={`font-bold text-sm uppercase tracking-wider mb-3 ${themeStyles.textMain}`}>Your Strengths 💪</h3>
       <div className="flex flex-wrap gap-2">
         {recommendations.strengths.map(s=><span key={s} style={{backgroundColor:'rgba(0,166,81,0.1)',color:'#00A651',borderColor:'rgba(0,166,81,0.2)'}} className="border px-3 py-1.5 rounded-full text-xs font-medium">{s}</span>)}
@@ -1127,10 +1136,13 @@ const LearningTab = ({themeStyles, progressData, setProgressData}) => {
     // 4. Save quietly to the FastAPI database in the background
     try {
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const token = localStorage.getItem("pathfinder_token");
       await fetch(`${API_URL}/api/progress`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify({ date: today, completed_tasks: newChecked, score: newScore })
       });
     } catch (e) {
@@ -1332,7 +1344,6 @@ const ProgressTab = ({recommendations, themeStyles, progressData}) => {
   );
 };
 
-
 const ProfileTab = ({userData,profileData, onRetakeAssessment, themeStyles, toggleTheme, isDark, onEditProfile, onLogOut, onDeleteAccount}) => {
   const rawName = (userData&&userData.name)?userData.name.trim().split(' ')[0]:'Student';
   const initial = rawName.charAt(0).toUpperCase();
@@ -1469,12 +1480,14 @@ const DashboardScreen = ({userData,profileData,recommendations,onCareerSelect,on
   const fetchCareerPath = async () => {
     try {
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const token = localStorage.getItem("pathfinder_token");
       
-      // We only need the POST method and credentials; no body required!
       const response = await fetch(`${API_URL}/api/generate-career-path`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include" 
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
       });
 
       if (!response.ok) throw new Error("Failed to generate advanced path");
@@ -1496,9 +1509,14 @@ const DashboardScreen = ({userData,profileData,recommendations,onCareerSelect,on
     const fetchProgress = async () => {
       try {
         const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+        const token = localStorage.getItem("pathfinder_token"); // Declare token first
+        
         const response = await fetch(`${API_URL}/api/progress`, {
           method: "GET",
-          credentials: "include"
+          headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`                  
+        },
         });
         if (response.ok) {
           const data = await response.json();
@@ -1771,12 +1789,17 @@ const EditProfileModal = ({ isOpen, onClose, userData, setUserData, profileData,
         try {
           // 1. Get the AI Analysis
           const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-          const response = await fetch(`${API_URL}/api/analyze-assessment`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ answers, profileData })
-          });
+          const token = localStorage.getItem("pathfinder_token"); // <-- ADDED
+
+      // 1. Analyze assessment via Gemini
+      const response = await fetch(`${API_URL}/api/analyze-assessment`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`                  // <-- ADDED
+        },
+        body: JSON.stringify({ profileData, answers })
+      });
 
           if (!response.ok) throw new Error("AI request failed");
           
@@ -1804,10 +1827,14 @@ const EditProfileModal = ({ isOpen, onClose, userData, setUserData, profileData,
         if (userData) {
           try {
             const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+            const token = localStorage.getItem("pathfinder_token"); // <-- ADDED
+      // 1. Analyze assessment via Gemini
             await fetch(`${API_URL}/api/save-assessment`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
+            method: 'POST',
+            headers: { 
+               'Content-Type': 'application/json',
+               'Authorization': `Bearer ${token}`                  // <-- ADDED
+              },
               body: JSON.stringify({
                 email: userData.email,
                 profileData: profileData,
@@ -1857,11 +1884,18 @@ const EditProfileModal = ({ isOpen, onClose, userData, setUserData, profileData,
   useEffect(() => {
     const fetchSession = async () => {
       try {
+        const token = localStorage.getItem('pathfinder_token');
+        if (!token) {
+          setIsAppLoading(false);
+          return;
+        }
+
         const API_URL = import.meta.env.VITE_API_URL;
         const response = await fetch(`${API_URL}/api/me`, {
           method: "GET",
-          credentials: "include" // Include cookies for session-based auth
+          headers: {"Authorization": `Bearer ${token}`}
         });
+
         if (response.ok) {
           const data = await response.json();
           const user = data.user;
@@ -1890,15 +1924,17 @@ const EditProfileModal = ({ isOpen, onClose, userData, setUserData, profileData,
   // Reset completely on logout
   const handleLogOut = async () => {
     try {
+      
       const API_URL = import.meta.env.VITE_API_URL;
       // Inform backend about logout if necessary (e.g., to invalidate tokens)
       await fetch(`${API_URL}/api/logout`, {
-        method: "POST",
-        credentials: "include", // Include cookies if using session-based auth
+        method: "GET",
+        headers: {"Authorization": `Bearer ${localStorage.getItem('pathfinder_token')}`},
       });
     } catch (err) {
       console.error("Error occurred while logging out:", err);
     }
+    localStorage.removeItem('pathfinder_token'); // Removed token locally
     setUserData(null);
     setProfileData({age:'',grade:'',favSubjects:[],difficultSubjects:[],hobbies:[],dreamCareer:''});
     setAnswers({});
@@ -1918,15 +1954,16 @@ const handleDeleteAccount = async () => {
 
     try {
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-      
+      const token = localStorage.getItem("pathfinder_token");
       // 2. Tell FastAPI to delete the database record
       const response = await fetch(`${API_URL}/api/delete-account`, {
         method: "DELETE",
-        credentials: "include" // Must include the cookie to prove identity!
+        headers: { "Authorization": `Bearer ${token}` }
       });
 
       if (response.ok) {
         // 3. Wipe the React memory clean and boot them to the splash screen
+        localStorage.removeItem('pathfinder_token'); // Removed token locally
         setUserData(null);
         setProfileData({age:'',grade:'',favSubjects:[],difficultSubjects:[],hobbies:[],dreamCareer:''});
         setAnswers({});
